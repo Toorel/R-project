@@ -1,0 +1,797 @@
+---
+title: "Final project"
+author: "Toorese Lasebikan"
+date: '12/14/2020'
+output: html_document
+---
+
+
+
+
+```{r, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(ggplot2)
+#install.packages("kableExtra")
+library(kableExtra)
+library(knitr)
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Import starting data
+nlsy <- read_csv("http://www.andrew.cmu.edu/user/achoulde/94842/final_project/nlsy97/nlsy97_Nov2020.csv")
+
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+### Renaming variable names
+colnames(nlsy) <- c("PSTRAN_GPA.01_PSTR",
+    "incarcerations.num",
+    "INCARC_AGE_FIRST_XRND",
+    "INCARC_LENGTH_LONGEST_XRND",
+    "PUBID_1997",
+    "YSCH-36400_1997",
+    "YSCH-37000_1997",
+    "YSAQ-010_1997",
+    "YSAQ-369_1997",
+    "YEXP-300_1997",
+    "YEXP-1500_1997",
+    "YEXP-1600_1997",
+    "YEXP-1800_1997",
+    "YEXP-2000_1997",
+    "sex",
+    "KEY_BDATE_M_1997",
+    "birth.year",
+    "PC8-090_1997",
+    "PC8-092_1997",
+    "PC9-002_1997",
+    "unhappy.female",
+    "unhappy.male",
+    "CV_AGE_12/31/96_1997",
+    "CV_BIO_MOM_AGE_CHILD1_1997",
+    "CV_BIO_MOM_AGE_YOUTH_1997",
+    "citizenship",
+    "CV_ENROLLSTAT_1997",
+    "CV_HH_NET_WORTH_P_1997",
+    "CV_YTH_REL_HH_CURRENT_1997",
+    "CV_MSA_AGE_12_1997",
+    "CV_URBAN-RURAL_AGE_12_1997",
+    "CV_SAMPLE_TYPE_1997",
+    "CV_HGC_BIO_DAD_1997",
+    "CV_HGC_BIO_MOM_1997",
+    "CV_HGC_RES_DAD_1997",
+    "CV_HGC_RES_MOM_1997",
+    "race",
+    "YSCH-6800_1998",
+    "YSCH-7300_1998",
+    "YSAQ-372B_1998",
+    "YSAQ-371_2000",
+    "YSAQ-282J_2002",
+    "YSAQ-282Q_2002",
+    "CV_HH_NET_WORTH_Y_2003",
+    "CV_BA_CREDITS.01_2004",
+    "YSAQ-000B_2004",
+    "YSAQ-373_2004",
+    "YSAQ-369_2005",
+    "CV_BIO_CHILD_HH_2007",
+    "YTEL-52~000001_2007",
+    "YTEL-52~000002_2007",
+    "helping.people",
+    "YTEL-52~000004_2007",
+    "CV_BIO_CHILD_HH_2009",
+    "college.type",
+    "CV_INCOME_FAMILY_2011",
+    "CV_HH_SIZE_2011",
+    "CV_HH_UNDER_18_2011",
+    "CV_HH_UNDER_6_2011",
+    "education",
+    "CV_BIO_CHILD_HH_2011",
+    "YSCH-3112_2011",
+    "YSAQ-000A000001_2011",
+    "YSAQ-000A000002_2011",
+    "YSAQ-000B_2011",
+    "YSAQ-360C_2011",
+    "YSAQ-364D_2011",
+    "YSAQ-371_2011",
+    "YSAQ-372CC_2011",
+    "YSAQ-373_2011",
+    "YSAQ-374_2011",
+    "YEMP_INDCODE-2002.01_2011",
+    "CV_BIO_CHILD_HH_2015",
+    "employment.industry",
+    "YEMP_OCCODE-2002.01_2017",
+    "marital.status",
+    "received.income",
+    "income",
+    "YINC-1800_2017",
+    "YINC-2400_2017",
+    "YINC-2600_2017",
+    "YINC-2700_2017",
+    "CVC_YTH_REL_HH_AGE6_YCHR_XRND",
+    "CVC_SAT_MATH_SCORE_2007_XRND",
+    "CVC_SAT_VERBAL_SCORE_2007_XRND",
+    "CVC_ACT_SCORE_2007_XRND",
+    "CVC_HH_NET_WORTH_20_XRND",
+    "CVC_HH_NET_WORTH_25_XRND",
+    "CVC_ASSETS_FINANCIAL_25_XRND",
+    "CVC_ASSETS_DEBTS_20_XRND",
+    "CVC_HH_NET_WORTH_30_XRND",
+    "CVC_HOUSE_VALUE_30_XRND",
+    "CVC_HOUSE_TYPE_30_XRND",
+    "CVC_ASSETS_FINANCIAL_30_XRND",
+    "CVC_ASSETS_DEBTS_30_XRND")
+
+```
+
+
+```{r,echo=FALSE, message=FALSE}
+#recode variables of interest
+nlsy.for.analysis <- nlsy%>%
+  mutate(sex = recode(sex, `1` = 'Male', `2`= 'Female' ),
+         race = recode( race, `1` = 'Black', `2` = 'Hispanic',
+                              `3` = 'Mixed Race (Non-Hispanic)', 
+                              `4` = ' Non-Black / Non-Hispanic'),
+         education = recode(education, 
+                            `2` = 'High school diploma',
+                            `1` = 'GED',
+                            `3` = 'Associate/Junior college',
+                            `4` = 'Bachelors degree',
+                            `5` = 'Advanced Degree', 
+                            `6` = 'Advanced Degree',
+                            `7` = 'Advanced Degree',
+                            `0` = 'None',
+                            `-3` = 'Unknown',
+                            `-5` = 'Unknown'),
+         incarcerated.binary = ifelse(incarcerations.num == 0, 'No', 
+                               ifelse(incarcerations.num > 0 , 'Yes','Unknown')),
+         helping.people = recode_factor(helping.people,
+                                        `4` = "Strongly Agree/Agree", 
+                                        `3` = "Strongly Agree/Agree", 
+                                        `2` = "Neither", 
+                                        `1` = "Strongly Disagree/Disagree",
+                                        `0` = "Strongly Disagree/Disagree",
+                                        `-1` = "No Response", 
+                                        `-2` = "No Response",
+                                        `-4` = "No Response",
+                                        `-5` = "No Response"), 
+         marital.status = recode_factor(marital.status,
+                                        '1' = "Married", 
+                                        '0' = "Not Married", 
+                                        '2' = "Not Married", 
+                                        '3' = "Not Married", 
+                                        '4' = "Not Married", 
+                                        '-3' = "Unknown", 
+                                        '-5' = "Unknown"),
+          employment.industry = ifelse(employment.industry <300, "Agriculture, Forestry and Fisheries", 
+                               ifelse(employment.industry > 300 & employment.industry < 500, "Mining",
+                               ifelse(employment.industry > 500 & employment.industry < 700, "Utilities",
+                               ifelse(employment.industry == 770, "Construction", 
+                               ifelse(employment.industry > 1000 & employment.industry< 4000, "Manufacturing", 
+                               ifelse(employment.industry > 4000 & employment.industry < 4600, "Wholesale Trade", 
+                               ifelse(employment.industry > 4600 & employment.industry < 5800, "Retail Trade",
+                               ifelse(employment.industry == 5890, "Arts, Entert, & Rec Services", 
+                               ifelse(employment.industry > 6000 & employment.industry <6400, "Transp, Warehousing", 
+                               ifelse(employment.industry > 6800 & employment.industry < 7200, "Fin, Insurance,Real Est", 
+                               ifelse(employment.industry > 7200 & employment.industry < 7800, "Prof,Related Services", 
+                               ifelse(employment.industry > 7800 & employment.industry <8500, "Edu, Health,Social Serv", 
+                               ifelse(employment.industry > 8500 & employment.industry < 8700, "Entert, Accom, Food Serv", 
+                               ifelse(employment.industry > 8700 & employment.industry <9300, "Other Services",
+                               ifelse(employment.industry > 9300 & employment.industry < 9600, "Public Admin", 
+                               ifelse(employment.industry > 9600 & employment.industry < 9900, "Active Duty Military", 
+                               ifelse(employment.industry > 9900, "Acs Special Codes", 'Unknown'))))))))))))))))),
+         citizenship = recode_factor(citizenship, 
+                                     `1` = "US Citizen", 
+                                     `2` = "Non US Citizen", 
+                                     `3` = "Can't Determine", 
+                                     `-1` = "Unknown", 
+                                     `-2` = "Unknown", 
+                                     `-4` = "Unknown",
+                                     `-5` = "Unknown"), 
+         college.type = recode(college.type,
+                                 `1` = "Public Institution",
+                                  `2` = "Private Institution", 
+                                  `3` = "Private Institution",
+                                  `-1` = "Unknown", 
+                                  `-3` = "Unknown", 
+                                  `-4` = "Valid Skip",
+                                  `-5` = "Unknown"))
+
+nlsy.for.analysis <- nlsy.for.analysis%>%
+  select(sex, race, incarcerated.binary, employment.industry, citizenship,education, helping.people, marital.status, unhappy.female, unhappy.male, income,college.type)
+
+nlsy.for.analysis<- nlsy.for.analysis%>%
+  filter(income>-1 & income < 149000)
+
+```
+
+
+### Project Overview
+
+
+This project aims to examine whether there are significant differences in income between men and women; whether the differences (if present) vary depending on other factors. 
+
+To answer this research question, the analysis will use the National Longitudinal Survey of Youth data set (NYSL 1997 Cohort). The data set contains a total of 8984 survey responses, respondents were surveyed every one or two years since 1997. Given our analysis is focused on gender differences in income, only a subset of the data was used in this analysis. We restricted the analysis to individuals for whom we had data about their income and also excluded top-coded income values (reason for this decision is discussed in the methodology section). The final data used for this analysis consisted of 4969 observations.
+
+
+### 1. Data Summary
+
+<p>&nbsp;</p>
+#### **1.1 Demographics**
+
+Our sample consisted of 2,440 (49.1%) female respondents and 2,529 (51.1%) male respondents. In **Table 1** we have provided a summary of demographic characteristics including `Race/Ethnicity`, `Citizenship`, and `Marital Status`.  
+
+<p>&nbsp;</p>
+
+```{r,echo=FALSE, message=FALSE} 
+
+#count of gender by race
+education<-nlsy.for.analysis%>%
+  group_by(sex, race)%>%
+  summarize(Count = n())%>%
+  mutate(Count = ifelse(is.na(Count), 0, Count))%>%
+  spread(sex, Count) %>%
+  mutate(Total = Female +  Male)%>%
+  knitr::kable(col.names = c('Race/Ethnicity', 'Female', 'Male', 'Total'), caption = "Table 1: Demographics (Counts)")
+
+ column_spec(education, 1:4, width="15em")
+```
+
+The majority of respondents self identified as Non-Black / Non-Hispanic. The number of black and hispanic respondents was around the same. There was a relatively small number of respondents identifying as Mixed Race (Non-Hispanic). Furthermore, most of the respondents in our sample were U.S. citizens. Finally, regarding marital status, we had approximately equal number of respondents who were married and not married. 
+
+<p>&nbsp;</p>
+
+```{r,echo=FALSE, message=FALSE} 
+
+#count of gender by citizenship
+citizenship<-nlsy.for.analysis%>%
+  group_by(sex, citizenship)%>%
+  summarize(Count = n())%>%
+  mutate(Count = ifelse(is.na(Count), 0, Count))%>%
+  spread(sex, Count) %>%
+  mutate(Total = Female +  Male)%>%
+  knitr::kable(col.names = c('Citizenship', '', '', ''))
+
+ column_spec(citizenship, 1:4, width="15em")
+```
+
+<p>&nbsp;</p>
+
+```{r,echo=FALSE, message=FALSE} 
+#count of gender by marital status
+marital.status <-nlsy.for.analysis%>%
+  group_by(sex, marital.status)%>%
+  summarize(Count = n())%>%
+  spread(sex, Count) %>%
+  mutate(Female = ifelse(is.na(Female), 0, Female))%>%
+  mutate(Total = Female +  Male)%>%
+  knitr::kable( col.names = c('Marital Status', '', '', '')  )
+
+
+
+ column_spec(marital.status, 1:4, width="15em")
+```
+
+
+
+<p>&nbsp;</p>
+
+#### **1.2 Additional Variables**
+
+
+We were also interested in exploring `Education Level` (as of the time the respondent was surveyed), `College Type`, `Helping Others`, having a `Criminal Record` , `Industry of Employment`, `Importance of Helping Others` as additional variables. **Table 2** breaks down all variables by gender, only counts are included. 
+
+The helping others variable was based on a personal responsibility survey question. Respondents were asked the extent to which they agree or disagree with the following statement, "Personally assisting people in trouble is very important to me." To increase overall Ns we combined the top two and the bottom two responses. 
+
+<p>&nbsp;</p>
+
+
+```{r,echo=FALSE, message=FALSE} 
+
+#count of gender by education
+education<-nlsy.for.analysis%>%
+  group_by(sex, education)%>%
+  summarize(Count = n())%>%
+  mutate(Count = ifelse(is.na(Count), 0, Count))%>%
+  spread(sex, Count) %>%
+  mutate(Total = Female +  Male)%>%
+  knitr::kable(col.names = c('Education', 'Female', 'Male', 'Total'),caption = "Table 2: Other Variables of Interest")
+
+ column_spec(education, 1:4, width="15em")
+```
+
+<p>&nbsp;</p>
+```{r,echo=FALSE, message=FALSE} 
+#count of gender by college type
+college.type<- nlsy.for.analysis%>%
+  group_by(sex, college.type)%>%
+  summarize(Count = n())%>%
+  spread(sex, Count) %>%
+  mutate(Female = ifelse(is.na(Female), 0, Female))%>%
+  mutate(Total = Female +  Male)%>%
+  knitr::kable( col.names = c('College Type', '', '', ''))
+
+ column_spec(college.type, 1:4, width="15em")
+
+```
+
+<p>&nbsp;</p>
+```{r,echo=FALSE, message=FALSE} 
+#count of gender by industry
+industry<- nlsy.for.analysis%>%
+  group_by(sex, employment.industry)%>%
+  summarize(Count = n())%>%
+  spread(sex, Count) %>%
+  mutate(Female = ifelse(is.na(Female), 0, Female))%>%
+  mutate(Total = Female +  Male)%>%
+  knitr::kable( col.names = c('Industry', '', '', ''))
+
+ column_spec(industry, 1:4, width="15em")
+
+```
+
+<p>&nbsp;</p>
+```{r,echo=FALSE, message=FALSE} 
+#count of gender by Criminal record
+crm.record<-nlsy.for.analysis%>%
+  group_by(sex, incarcerated.binary)%>%
+  summarize(Count = n())%>%
+  spread(sex, Count) %>%
+  mutate(Female = ifelse(is.na(Female), 0, Female))%>%
+  mutate(Total = Female +  Male)%>%
+  knitr::kable( col.names = c('Criminal History', '', '', ''))
+
+
+ column_spec(crm.record, 1:4, width="15em")
+```
+
+
+<p>&nbsp;</p>
+```{r,echo=FALSE, message=FALSE} 
+#count of gender by helping people
+helpingOthers<-nlsy.for.analysis%>%
+  group_by(sex, helping.people)%>%
+  summarize(Count = n())%>%
+  spread(sex, Count) %>%
+  mutate(Female = ifelse(is.na(Female), 0, Female))%>%
+  mutate(Total = Female +  Male)%>%
+  knitr::kable( col.names = c('Importance of Helping Others', '', '', ''))
+
+
+ column_spec(helpingOthers, 1:4, width="15em")
+```
+
+
+<p>&nbsp;</p>
+
+**Table 2** allows us to see that the highest educational attainment among both men and women was a high school diploma. Additionally, there is a higher proportion of females who obtained a bachelors or advanced degree when compared to their male counterparts. To mitigate the small sample sizes within categories, we grouped all advanced degrees together into a single category. 
+
+When examining college type, we were interested in comparing differences between public and private institutions. Consequently, we grouped for-profit and non-profit private institutions to a single category. For this variable we did not group valid skips as unknown, because in this case, valid skips were likely respondents who did not attend college. We kept them as a separate category. Overall, we see that the majority of the respondents who attended college, attended a public institution. As one would expect, the majority of respondents for this question had a valid skip, which is in line with the fact the majority of respondents only completed a high school diploma. 
+
+Furthermore, we observe that most men and women work in the agriculture, forestry and fishery industry. There are a lot more women than men in the education, health and social services. There are no active duty military women in this data set. There are also considerable differences in Construction, Agriculture, Forestry, Fisheries, Manufacturing, Professional & Related Services, Transportation & Warehousing.There are 97 respondents whose industry is unknown. 
+
+We also were interested in examining whether respondents had a criminal record.We hypothesized that the greatest predictor for income would be whether a respondents had a criminal record, rather than the number of incarcerations. Thus, we created a binary variable from the total number of incarcerations variable. 
+
+We can observe from **Table 2** is that both genders have a greater portion of respondents who do not have a criminal record. There are fewer females with a criminal record than men with a criminal record. There is a low number of respondents whose answer is unknown. This affects the strength of the conclusions we can draw on this group and thus will be excluded in future analyses.
+
+Lastly, we see that overall the majority of respondents provided no response to the personal responsibility question. We can observe that there were more men who responded with `Neither` and `Strongly Disagree/Disagree` when compared to their female counterparts. 
+
+
+
+
+
+<p>&nbsp;</p>
+
+#### **1.3 Income**
+
+With an understanding of our sample, we then began to explore how income varied by our variables of interest. We began by exploring gender difference in income (difference in mean between male - female). The box plot in **Figure 1.** suggests that on average women respondents earned less than their male counterparts. Further, we observe more outliers among female respondents than male respondents, with top earning female respondents being almost at par with top earning men. 
+
+<p>&nbsp;</p>
+```{r,echo=FALSE, message=FALSE} 
+#box plot for income by gender
+
+ggplot(nlsy.for.analysis, aes(x = sex, y = income, fill = I("lightblue"))) + geom_boxplot() + 
+  labs(title = "Figure 1. Income Distribution by Gender", x = "Gender", y = "Income") 
+```
+<p>&nbsp;</p>
+
+We then proceeded to test whether this difference observed is statistically significant, by conducting a two-sample t-test. The t-test  presented in **Figure 2** is inline with our previous finding that the difference in average income between female respondents and male respondents in our sample is statistically significant. 
+
+**Figure 2. Two-Sample T-Test: Testing Gender Difference in Average Income**
+```{r,echo=FALSE, message=FALSE} 
+
+#t.test for mean difference in income
+income.t.test <- t.test(income~sex, data = nlsy.for.analysis)
+income.t.test
+```
+
+<p>&nbsp;</p>
+
+
+After examining income difference in gender, we explored whether these observed differences vary across our variables of interest. We first examined how gender differences in income vary across our demographic variables we included in **Table 1**.
+
+
+<p>&nbsp;</p>
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+# gender diff in income by race 
+propdiff_income<-nlsy.for.analysis%>%
+  group_by(race)%>%
+  summarize(prop_diff = mean(income[sex == "Male"], na.rm = TRUE) - mean(income[sex == "Female"],na.rm = TRUE),
+            lower = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[2],
+            upper = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[1])
+
+#graphical visualization
+marital.status.plot<-ggplot(propdiff_income, aes(x=race, y=prop_diff, fill = I('lightblue'))) + 
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=lower, ymax=upper), 
+                width=.2,                    # Width of the error bars
+                position=position_dodge(0.9))+
+  labs(title = "Figure 3. Gender Difference in Income by Race", x = "Race/Ethnicity", y ="Gender Difference in Mean Income" )+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+marital.status.plot
+
+```
+<p>&nbsp;</p>
+
+We can observe from **Figure 3** that the gender gap differs by race/ethnicity. The racial group with the lowest gender gap is among respondents who identified as Black.  This gender gap observed is statistically significant among Non-Black/Non-Hispanic, Black, and Hispanic. 
+
+<p>&nbsp;</p>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+# gender diff in income by citizenship
+propdiff_income<-nlsy.for.analysis%>%
+  group_by(citizenship)%>%
+  summarize(prop_diff = mean(income[sex == "Male"], na.rm = TRUE) - mean(income[sex == "Female"],na.rm = TRUE),
+            lower = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[2],
+            upper = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[1])
+
+#graphical visualization
+marital.status.plot<-ggplot(propdiff_income, aes(x=citizenship, y=prop_diff, fill = I('lightblue'))) + 
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=lower, ymax=upper), 
+                width=.2,                    # Width of the error bars
+                position=position_dodge(0.9))+
+  labs(title = "Figure 4. Gender Difference in Income by Citizenship", x = "Citizenship", y ="Gender Difference in Mean Income" )+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+marital.status.plot
+
+```
+
+
+The figure above shows how the gender income gap varies by the type of citizenship. From the figure, we can tell that the greatest differences in income between the genders is among U.S. citizens, and for respondents whose citizenship was unknown. Also, the largest variability is among non-U.S. citizens. 
+
+
+<p>&nbsp;</p>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+# gender diff in income by marital status 
+propdiff_income<-nlsy.for.analysis%>%
+  group_by(marital.status)%>%
+  summarize(prop_diff = mean(income[sex == "Male"], na.rm = TRUE) - mean(income[sex == "Female"],na.rm = TRUE),
+            lower = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[2],
+            upper = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[1])
+
+#graphical visualization
+marital.status.plot<-ggplot(propdiff_income, aes(x=marital.status, y=prop_diff, fill = I('lightblue'))) + 
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=lower, ymax=upper), 
+                width=.2,                    # Width of the error bars
+                position=position_dodge(0.9))+
+  labs(title = "Figure 5. Gender Difference in Income by Marital Status", x = "Marital Status", y ="Gender Difference in Mean Income" )+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+marital.status.plot
+
+```
+
+<p>&nbsp;</p>
+
+Our next analysis of gender gap was by marital status (**Figure 5**). We can observe that the greatest gender gap is among respondents who were married, followed by those who had been separated, divorced or widowed, and the smallest gender gap existed among respondents who had never been married. The only group in which the gender gap was not statistically significant was for those respondents who we did not have information about marital status. 
+
+<p>&nbsp;</p>
+
+```{r,echo=FALSE, message=FALSE}
+
+# gender diff in income by education
+propdiff_income<-nlsy.for.analysis%>%
+  group_by(education)%>%
+  summarize(prop_diff = mean(income[sex == "Male"], na.rm = TRUE) - mean(income[sex == "Female"],na.rm = TRUE),
+            lower = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[2],
+            upper = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[1])
+
+#graphical visualization
+education.plot<-ggplot(propdiff_income, aes(x=education, y=prop_diff,  fill = I('lightblue'))) +
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=lower, ymax=upper),
+                width=.2,                    # Width of the error bars
+                position=position_dodge(0.9))+
+  theme(axis.text.x=element_text(angle = 50, vjust = 0.5)) +
+  labs(title = "Figure 6. Gender Difference in Income by Education Level", x = "Education Level", y = "Gender Difference in Mean Income" )
+
+education.plot
+```
+
+<p>&nbsp;</p>
+
+ **Figure 6** allows us to determine how the gender wage gap varies by education level. From the figure, we can tell that gender has a statistically significant influence on wage for respondents across education levels. On average, for all these levels of education, men have a higher income. The education level with the greatest gender wage gap on average is among respondents with no degree/diploma. The lowest wage gap on average is between respondents whose education level is unknown.
+ 
+
+<p>&nbsp;</p>
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+# gender diff in income by college type
+propdiff_income<-nlsy.for.analysis%>%
+  group_by(college.type)%>%
+  summarize(prop_diff = mean(income[sex == "Male"], na.rm = TRUE) - mean(income[sex == "Female"],na.rm = TRUE),
+            lower = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[2],
+            upper = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[1])
+
+#graphical visualization
+college.type<-ggplot(propdiff_income, aes(x=college.type, y=prop_diff, fill = I('lightblue'))) +
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=lower, ymax=upper),
+                width=.2,                    # Width of the error bars
+                position=position_dodge(0.9))+
+  labs(title = "Figure 7. Gender Difference in Income by College Type", x = "College Type", y ="Gender Difference in Mean Income" )+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+college.type
+
+```
+
+
+**Figure 7**, above, shows the gender wage gap by college type.  The figure indicates a statistically significant difference in wages across college types by gender. We further observe that the confidence interval is smaller for those who had a valid skip.
+
+<p>&nbsp;</p>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+#industry
+propdiff_income<-nlsy.for.analysis%>%
+  filter(employment.industry != 'Active Duty Military')%>%
+  group_by(employment.industry)%>%
+  summarize(prop_diff = mean(income[sex == "Male"], na.rm = TRUE) - mean(income[sex == "Female"],na.rm = TRUE),
+            lower = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[2],
+            upper = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[1])
+
+propdiff_income <- mutate(propdiff_income, employment.industry = reorder(employment.industry, prop_diff))
+
+ggplot(propdiff_income, aes(x=employment.industry, y=prop_diff, fill =  I('lightblue'))) + 
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=lower, ymax=upper), 
+                width=.2,                    # Width of the error bars
+                position=position_dodge(0.9))+
+  labs(title = "Figure 8. Gender Difference in Income by Industry", x = "Employment Industry", y ="Gender Difference in Mean Income" )+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+**Figure 8** above shows the gender wage gap by industry. Public administration has the highest wage gap on average. The industry with the smallest difference that is statistically significant is manufacturing. The differences in mining, wholesale trade, and utilities is not statistically significant, but this could be partly due to the small sample size within these categories. We excluded Active duty military given that there were no female respondents within this industry.
+
+
+<p>&nbsp;</p>
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+# gender diff in income by criminal record 
+propdiff_income<-nlsy.for.analysis%>%
+  filter(incarcerated.binary != 'Unknown')%>%
+  group_by(incarcerated.binary)%>%
+  summarize(prop_diff = mean(income[sex == "Male"], na.rm = TRUE) - mean(income[sex == "Female"],na.rm = TRUE),
+            lower = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[2],
+            upper = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[1])
+
+#graphical visualization
+crm.record.plot<-ggplot(propdiff_income, aes(x=incarcerated.binary, y=prop_diff,fill = I('lightblue'))) + 
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=lower, ymax=upper), 
+                width=.2,                    # Width of the error bars
+                position=position_dodge(0.9))+
+  labs(title = "Figure 9. Gender Difference in Income by Criminal Record", x = "Criminal Record", y ="Gender Difference in Mean Income" )
+
+crm.record.plot
+```
+
+<p>&nbsp;</p>
+
+**Figure 9** illustrates the gender wage gap by criminal record. The gender difference in income is statistically significant for both those who have a criminal record and those who don't. The difference in income is much higher for respondents who do not have a criminal record. 
+
+
+<p>&nbsp;</p>
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+# gender diff in income by helping others 
+propdiff_income<-nlsy.for.analysis%>%
+  group_by(helping.people)%>%
+  summarize(prop_diff = mean(income[sex == "Male"], na.rm = TRUE) - mean(income[sex == "Female"],na.rm = TRUE),
+            lower = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[2],
+            upper = t.test(income[sex == "Male"], income[sex == "Female"])$conf.int[1])
+#propdiff_income
+
+#graphical visualization
+helping.others<-ggplot(propdiff_income, aes(x=helping.people, y=prop_diff,fill = I('lightblue'))) + 
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=lower, ymax=upper), 
+                width=.2,                    # Width of the error bars
+                position=position_dodge(0.9))+
+  labs(title = "Figure 10. Gender Difference in Income by Importance of Helping Others", x = "Extent of Agreement/disagreement", y ="Gender Difference in Mean Income" ) 
+
+helping.others
+```
+
+
+We can observe from **Figure 10** that the gender gap difference varies across the importance of helping others to the respondents. Among those who responded *Neither* we see the greatest gender gap in income. Among those who replied *Strongly Disagree/Disagree*, we see that the gender gap is not statistically significant. 
+
+<p>&nbsp;</p>
+
+
+### 2. Methodology 
+
+To develop an understanding of the gender wage gap, we first chose different characteristics and variables that affect what industry a person will work in. We then considered how the wage gap varied by the individual variables.  Then, we conducted a linear regression to see how the wage gap varied when we considered all the variables. 
+
+<p>&nbsp;</p>
+
+#### 2.1 Variable Selection and Process
+
+To get a grasp on the data we first considered how general demographics affected the wage gap. We looked at marital status, race, gender and citizenship status. Then we wanted to consider the other variables in layers. Starting first with education, we then look to see how college type impacts our model. These two variables describe human capital and also give insight into how each respondent was trained. 
+
+By considering first all the other factors, we can introduce the incarceration variable to the model. This is a distinguishing attribute in society, and we were curious to see if it impacts the wage gap. Finally we consider if people value helping others.   
+
+<p>&nbsp;</p>
+
+#### 2.2 Missing Data
+
+Missing values constituted a sizable portion of some of the categorical variables we analyzed. In some cases, these values made up more than 5% of the sample. As a result, we decided not to drop these values. We created a category called ‘Unknown’ and inserted these values into this category.
+
+This approach is the best method to make sure there is little bias in the estimation of the parameters.
+
+<p>&nbsp;</p>
+
+#### 2.3 Top-Coded Variables 
+We compared the Normal Q-Q plot to see what happens if top coded variables are included and if top coded variables are removed. We noticed that by excluding the top 2%, we get a normalized graph. Based on this, we decided to exclude the top-coded variables.
+This approach will not affect the interpretation of the result drastically.
+
+<p>&nbsp;</p>
+
+#### 2.4 Small Sample Size within categories
+
+We investigated the college type of the respondent and how it impacted the gender wage gap. The graph did show somewhat of a trend; there was a wider wage gap between those that went to a private not-for-profit school. However, there was so much variance, the difference between private and public institutions did not seem significant.
+
+<p>&nbsp;</p>
+
+#### 2.5 Excluded Relationships
+We investigated the influence of occupation on the gender wage gap. The different industries had a strong influence on the wage gap which can be seen in **Figure 8**. Although there was a significant difference, we decided not to include occupation in our linear regression analysis. Many industries were represented by a low number of respondents. Being that this variable is categorical, we decided not to include it in our analysis. 
+
+The relationship between helping people and income was excluded as well. As seen in **Figure 10**, there is a lot of variation in income, especially for those who strongly disagree. We believed this, along with the large percentage of the population who didn't answer this poll, would complicate our analysis. Thus, we decided not to include it. 
+
+<p>&nbsp;</p>
+
+### 3. Findings and Analysis 
+
+
+<p>&nbsp;</p>
+
+#### 3.1 Model 1: Demographics 
+
+<p>&nbsp;</p>
+We begin our regression analysis with our **Model 1** which just includes demographics. 
+<p>&nbsp;</p>
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Model1
+
+model1 <- lm( income ~ sex + marital.status+citizenship+race, data = nlsy.for.analysis)
+#summary(income.lm)
+
+kable(round(summary(model1)$coef, 3), format = 'markdown', caption = "Model 1: Linear Regression with Demographics")
+
+
+```
+
+<p>&nbsp;</p>
+
+Overall, we can observe that income varies across all of our four demographic variables. 
+
+**Gender:** We can see from our first model that once we control for marital states, citizenship, and race the average income for men is higher than for their female counterparts. Male respondents, on average, earned $11,398.240 more than female respondents.
+
+**Marital Status:** Controlling for gender, citizenship, and race, on average married respondents had higher income compared to respondents who were not married, and those whose marital status is unknown. 
+
+**Race:** Controlling for gender, citizenship, and marital status, we see from our regression that on average respondents that identified as Non-Hispanic, Non-Black on average earned more than both respondents who identified as Black or Hispanic. The inverse relationship is observed between respondents that identified as Non-Hispanic, Non-Black and respondents who identified as mixed-race (Non-Hispanic)
+
+**Citizenship status:** As **Figure 4** suggested, when holding all other demographic variables, respondents who were US citizens, on average, earned less than respondents who were not US citizens, respondents whose citizenship could not be determined, and those whose citizenship is unknown (non-respondents).
+
+<p>&nbsp;</p>
+
+#### 3.2 Model 2: Demographics + Education
+
+<p>&nbsp;</p>
+Next, for our **Model 2** we include education level into our linear regression. 
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Model2
+
+model2 <- lm( income ~ sex + marital.status+citizenship+race + education, data = nlsy.for.analysis)
+
+kable(round(summary(model2)$coef, 3), format = 'markdown', caption = "Model 2: Linear Regression with Education")
+
+```
+
+
+**Education level**: Education level was found to be a statistically significant predictor for income, as we expected given our previous analysis. Respondents who had an advanced degree, on average and holding our demographic variables constant, earned more than respondents who attained a lower level of education. The group who had the biggest difference when compared to respondents with advanced degrees were (1) respondents who received an GED and (2) those who responded that they had obtained no education. 
+
+Once we added education to our initial model, we saw that gender, marital status, race remained a predictor for income. The only difference we observed from model 1 was relating to **Citizenship**. In our model 2, the difference between US citizens respondents and Non US respondents was no longer found to be statistically significant (p-value  > 0.05). 
+
+
+
+<p>&nbsp;</p>
+#### 3.3 Model 3: Demographics + Education + College Type
+
+<p>&nbsp;</p>
+Next, for our **Model 3** we include education level into our linear regression. 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Model3
+
+model3 <- lm( income ~ sex + marital.status+citizenship+race + education+college.type, data = nlsy.for.analysis)
+
+kable(round(summary(model3)$coef, 3), format = 'markdown', caption = "Model 3: Linear Regression with Education and College Type")
+
+```
+
+
+**College Type**: Our *Model 3* indicated that college type was not a statistically significant predictor of income. Further, by adding college type, we see that the difference in income between respondents who identified as mixed race (non-Hispanic) and respondents who identified as non-Black, non-Hispanic was no longer not statistically significant. The remaining demographic variables and education level still remain statistical significant predictors of income. There were also small differences in the coefficients and p-value compared to our **Model 2**. 
+
+
+<p>&nbsp;</p>
+
+#### 3.3 Model 4: Demographics + Education + Criminal Record
+
+<p>&nbsp;</p>
+For our final model, **Model 4** we include criminal record into our linear regression.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Model4
+
+model4<- lm( income ~ sex + marital.status+citizenship+race + education + college.type+ incarcerated.binary, data = nlsy.for.analysis )
+
+kable(round(summary(model4)$coef, 3), format = 'markdown', caption = "Model 4: Linear Regression with Education, College Type and Criminal Record")
+
+```
+
+College type remained not significant, while education level and demographic variables remained statistically significant predictors. We also see from this model that criminal record is also a statistically significant predictor for income. When controlling for marital status, citizenship, race, education level, and college type, on average, respondents who had no criminal record earned higher income than both respondents who had a criminal record and those whose criminal record was unknown. 
+
+<p>&nbsp;</p>
+
+### 4. Discussion
+
+<p>&nbsp;</p>
+
+Our first model showed that the average income for men is greater than the average income for women. We decided to explore further to see if other variables (such as marital status, citizenship and education) caused similar trends in income levels.
+
+From this, we found that:
+
+1. Respondents who identified as White had a higher average income than respondents that were Black or Hispanic
+
+2. Respondents who were not born in the US had a higher income than respondents who were born in the US. This may be explained by the fact that immigration to the US is stringent and very self-selecting. Most times, individuals who are able to migrate to the US are middle class in their home country. These individuals build on their qualifications and may end up earning more in the long-run.
+
+3. Respondents who earned an advanced degree earned a greater average income than respondents with a lower level of education.
+
+4. Respondents without criminal records had an average income higher than respondents with criminal records. This is supported by the fact that employers are often not willing to employ individuals with a criminal background as a result of prejudice.
+
+One potential limitation of this study is our model showed that college is not a statistically significant predictor of income. This may not be true. We had a significantly large number of unknowns and valid skips in the “type of college attended” variable. Earlier analysis showed us that respondents who attended private colleges earned higher than respondents who attended public colleges. A deeper study and more carefully collated data is likely to show how college affects income.
+
+Our model fits are very believable. In all four models we ran, we were able to control for different variables and see the impact specific variables will have on the level of income. Our final model also took into account the variables we considered the most important in determining income in society.
+
+Finally, we are confident in our analysis. Majority of our conclusions reflect society as it is constituted. Findings such as the presence of a gender wage gap and how education level determines worth in a society are shown. These are findings already known to policy makers and can be presented to them to convince skeptical policy makers.
+
+
+### 5. References
+
+**Outside Sources references during this project: **
+
+* https://rmarkdown.rstudio.com/authoring_basics.html
+* http://www.sthda.com/english/wiki/ggplot2-title-main-axis-and-legend-titles
+* http://www.sthda.com/english/wiki/ggplot2-texts-add-text-annotations-to-a-graph-in-r-software
